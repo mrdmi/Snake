@@ -5,7 +5,7 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
@@ -18,36 +18,34 @@ import java.util.Deque;
 import java.util.Random;
 
 public class Snake extends Application {
-    private static final Color FIELD_COLOR = Color.LIGHTGRAY;
-    private static final int FRAME_TIME = 100;
-
     public enum Direction {
         LEFT, DOWN, RIGHT, UP
     }
-
     private static final int PIXEL_SIZE = 40;
     private static final int HORIZONTAL_PIXEL_COUNT = 15;
     private static final int VERTICAL_PIXEL_COUNT = 10;
     private static final Rectangle[][] FIELD = new Rectangle[VERTICAL_PIXEL_COUNT][HORIZONTAL_PIXEL_COUNT];
-    private Deque<Rectangle> snake = new ArrayDeque<>();
-    private Deque<Direction> keystrokeStack = new ArrayDeque<>();
-    private ArrayList<Rectangle> emptyPixels = new ArrayList<>();
-
+    private final Deque<Rectangle> snake = new ArrayDeque<>();
+    private final Deque<Direction> keystrokeStack = new ArrayDeque<>();
+    private final ArrayList<Rectangle> emptyPixels = new ArrayList<>();
     private static final Random RANDOM = new Random();
-
     private Rectangle food;
     private int xHeadPos = 3;
     private int yHeadPos = 1;
+    private static final Color FIELD_COLOR = Color.LIGHTGRAY;
     private static final Color BODY_COLOR = Color.BLACK;
     private static final Color HEAD_COLOR = Color.DARKGRAY;
     private static final Color FOOD_COLOR = Color.RED;
     private Timeline timeline;
+    private static final int FRAME_TIME = 100;
+    private boolean pause = true;
+
 
 
     @Override
     public void start(Stage stage) throws IOException {
-        Scene scene = new Scene(createField());
-        paintSnake();
+        Scene scene = new Scene(createGameField());
+        initializeGameObjects();
         play();
         scene.setOnKeyPressed(keyEvent -> {
             switch (keyEvent.getCode()) {
@@ -67,6 +65,13 @@ public class Snake extends Application {
                     if (keystrokeStack.getLast() != Direction.LEFT)
                         keystrokeStack.add(Direction.RIGHT);
                 }
+                case SPACE -> {
+                    if (pause)
+                        timeline.play();
+                    else
+                        timeline.pause();
+                    pause = !pause;
+                }
             }
         });
         stage.setScene(scene);
@@ -77,9 +82,6 @@ public class Snake extends Application {
         keystrokeStack.add(Direction.RIGHT);
 
         timeline = new Timeline(new KeyFrame(Duration.millis(FRAME_TIME), event -> {
-
-            snake.getLast().setFill(BODY_COLOR);
-
             if (keystrokeStack.size() > 1)
                 keystrokeStack.removeFirst();
 
@@ -114,7 +116,9 @@ public class Snake extends Application {
                 }
             }
 
+            snake.getLast().setFill(BODY_COLOR);
             var pixel = FIELD[yHeadPos][xHeadPos];
+            emptyPixels.remove(pixel);
 
             if (pixel == food) {
                 food = emptyPixels.get(RANDOM.nextInt(emptyPixels.size()));
@@ -124,16 +128,14 @@ public class Snake extends Application {
                 emptyPixels.add(snake.getFirst());
                 snake.removeFirst();
             }
-            pixel.setFill(HEAD_COLOR);
             if (snake.contains(pixel)){
                 restart();
                 return;
             }
+            pixel.setFill(HEAD_COLOR);
             snake.add(pixel);
-            emptyPixels.remove(pixel);
         }));
         timeline.setCycleCount(Timeline.INDEFINITE);
-        timeline.play();
     }
 
     private void restart() {
@@ -143,11 +145,11 @@ public class Snake extends Application {
         keystrokeStack.add(Direction.RIGHT);
         snake.clear();
         emptyPixels.clear();
-        resetField();
-        paintSnake();
+        resetGameField();
+        initializeGameObjects();
     }
 
-    private void resetField() {
+    private void resetGameField() {
         for (var line : FIELD) {
             for (var pixel : line) {
                 pixel.setFill(FIELD_COLOR);
@@ -156,7 +158,7 @@ public class Snake extends Application {
         }
     }
 
-    private void paintSnake() {
+    private void initializeGameObjects() {
 
         snake.add(FIELD[1][1]);
         snake.add(FIELD[1][2]);
@@ -172,7 +174,7 @@ public class Snake extends Application {
         food.setFill(FOOD_COLOR);
     }
 
-    private Parent createField() {
+    private Parent createGameField() {
         GridPane gridPane = new GridPane();
         for (int i = 0; i < VERTICAL_PIXEL_COUNT; i++) {
             for (int j = 0; j < HORIZONTAL_PIXEL_COUNT; j++) {
