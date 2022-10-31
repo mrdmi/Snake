@@ -15,11 +15,13 @@ import javafx.util.Duration;
 
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.Random;
 
 public class Snake extends Application {
     private static final Color FIELD_COLOR = Color.LIGHTGRAY;
-    private static final int FRAME_TIME = 1000;
+    private static final int FRAME_TIME = 200;
 
     public enum Direction {
         LEFT, DOWN, RIGHT, UP
@@ -31,6 +33,11 @@ public class Snake extends Application {
     private static final Rectangle[][] FIELD = new Rectangle[VERTICAL_PIXEL_COUNT][HORIZONTAL_PIXEL_COUNT];
     private Deque<Rectangle> snake = new ArrayDeque<>();
     private Deque<Direction> keystrokeStack = new ArrayDeque<>();
+    private ArrayList<Rectangle> emptyPixels = new ArrayList<>();
+
+    private static final Random RANDOM = new Random();
+
+    private Rectangle food;
     private int xHeadPos = 3;
     private int yHeadPos = 1;
     private static final Color BODY_COLOR = Color.BLACK;
@@ -110,12 +117,20 @@ public class Snake extends Application {
             }
 
             var pixel = FIELD[yHeadPos][xHeadPos];
-            snake.getFirst().setFill(FIELD_COLOR);
-            snake.removeFirst();
+
+            if (pixel == food) {
+                food = emptyPixels.get(RANDOM.nextInt(emptyPixels.size()));
+                food.setFill(FOOD_COLOR);
+            } else {
+                snake.getFirst().setFill(FIELD_COLOR);
+                emptyPixels.add(snake.getFirst());
+                snake.removeFirst();
+            }
             pixel.setFill(HEAD_COLOR);
             if (snake.contains(pixel))
                 timeline.stop();
             snake.add(pixel);
+            emptyPixels.remove(pixel);
         }));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
@@ -129,8 +144,12 @@ public class Snake extends Application {
 
         for (var segment : snake) {
             segment.setFill(BODY_COLOR);
+            emptyPixels.remove(segment);
         }
         snake.getLast().setFill(HEAD_COLOR);
+
+        food = emptyPixels.get(RANDOM.nextInt(emptyPixels.size()));
+        food.setFill(FOOD_COLOR);
     }
 
     private Parent createField() {
@@ -141,6 +160,7 @@ public class Snake extends Application {
                 pixel.setFill(Color.LIGHTGRAY);
                 FIELD[i][j] = pixel;
                 gridPane.add(pixel, j, i);
+                emptyPixels.add(pixel);
             }
         }
         return gridPane;
