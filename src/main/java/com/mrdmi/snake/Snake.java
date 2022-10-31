@@ -3,8 +3,6 @@ package com.mrdmi.snake;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.GridPane;
@@ -21,7 +19,7 @@ import java.util.Random;
 
 public class Snake extends Application {
     private static final Color FIELD_COLOR = Color.LIGHTGRAY;
-    private static final int FRAME_TIME = 200;
+    private static final int FRAME_TIME = 100;
 
     public enum Direction {
         LEFT, DOWN, RIGHT, UP
@@ -127,13 +125,35 @@ public class Snake extends Application {
                 snake.removeFirst();
             }
             pixel.setFill(HEAD_COLOR);
-            if (snake.contains(pixel))
-                timeline.stop();
+            if (snake.contains(pixel)){
+                restart();
+                return;
+            }
             snake.add(pixel);
             emptyPixels.remove(pixel);
         }));
         timeline.setCycleCount(Timeline.INDEFINITE);
         timeline.play();
+    }
+
+    private void restart() {
+        xHeadPos = 3;
+        yHeadPos = 1;
+        keystrokeStack.clear();
+        keystrokeStack.add(Direction.RIGHT);
+        snake.clear();
+        emptyPixels.clear();
+        resetField();
+        paintSnake();
+    }
+
+    private void resetField() {
+        for (var line : FIELD) {
+            for (var pixel : line) {
+                pixel.setFill(FIELD_COLOR);
+                emptyPixels.add(pixel);
+            }
+        }
     }
 
     private void paintSnake() {
